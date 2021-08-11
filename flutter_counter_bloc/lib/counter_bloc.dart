@@ -27,9 +27,14 @@ class CounterBloc {
 
   int _count = 0;
 
+  // イニシャライザ
   CounterBloc() {
+    // 出力
+    // stream 非同期データイベント。イベントを受信する方法を提供。リスナーを設定できる
+    // listenはサブスクリプション（購読）を設定する。ストリームの最後の出口
     _actionController.stream.listen((_) {
       _count++;
+      // sinkにデータをadd（入力）
       _countController.sink.add(_count);
     });
   }

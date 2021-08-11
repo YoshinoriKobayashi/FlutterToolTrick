@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_counter_bloc/counter_bloc.dart';
+import 'package:provider/provider.dart';
 
 // 次の記事を参考にカスタマイズ
 // https://qiita.com/tetsufe/items/521014ddc59f8d1df581
@@ -28,64 +30,70 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      // childパラメータに指定したWidget以下全てのWidgetで、同じBLoCインスタンスにアクセスすることができます。
+      home: Provider<CounterBloc>(
+        create: (context) => CounterBloc(),
+        // disposeパラメータを使って、Widgetとblocの生存期間を一緒にします。これをしないと必要ないblocがいつまでも残ってしまうことになります。
+        dispose: (context, bloc) => bloc.dispose(),
+        child: MyHomePage(title: 'Flutter Demo Home Page'),
+      ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+  MyHomePage({this.title});
 
   final String title;
 
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  // ここのカウンターの値を他のページや他のWidgetで使いたい時に不便
-  int _counter = 0;
-
-  // + ボタンをタップされたとき
-  void _incrementCounter() {
-    // StatefulWidgetでは、setState()というメソッドを通じてフレームワーク側に
-    // 画面更新が必要であることを通知します。
-    // あとは、フレームワーク側でbuild()メソッドが実行されるので、
-    // プログラマーは必要な画面表示処理をbuild()メソッド内に実装します。
-    setState(() {
-      // ボタンを押すたびにsetState()でbuild()メソッドを呼び出しているため、ページ全体がリビルドされてしまい、非効率
-      _counter++;
-    });
-  }
-
+  // BLoCは、MyHomePage（子Widget）のbuild()メソッドで呼ぶのが定番です。
   @override
   Widget build(BuildContext context) {
+    final counterBloc = Provider.of<CounterBloc>(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
+        appBar: AppBar(
+          title: Text(title),
         ),
-      ),
-      // +のアクションボタン
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+        body: Center(
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    'You have pushed the button this many times:',
+                  ),
+                  //
+                  // StreamBuilder でBLoCの値を受け取る
+                  // StreamBuilderを使って、Streamの値を反映します。
+                  // StreamBuilderを使うことで、build()メソッドを呼ぶことなくStreamの値に応じてこの箇所だけUIを更新することができます。
+                  // このStreamBuilderのおかげで、MyHomePage()ウィジェットはStatefulWidgetからStatelessWidgetに置き換えることができていることに気付いたでしょうか。
+                  StreamBuilder(
+                    initialData: 0,
+                    stream: counterBloc.count,
+                    builder: (context, snapshot) {
+                      return Text(
+                        '${snapshot.data}',
+                        style: Theme
+                            .of(context)
+                            .textTheme
+                            .display1,
+                      );
+                    },
+                  )
+                ]
+            )
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            // Sink<T>.add()
+            // ここでは、counterBloc.increment の中でしている。
+            // カウントアップアクションをBloCに送る
+            counterBloc.increment.add(null)
+          },
+          tooltip: 'Increment',
+          child: Icon(Icons.add),
+        ),
     );
   }
+
 }
