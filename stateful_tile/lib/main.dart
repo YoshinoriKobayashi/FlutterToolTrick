@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hello_world/statefulTile.dart';
+import 'package:stateful_tile/statefulTile.dart';
 void main() {
   runApp(MyApp());
 }
@@ -16,13 +16,17 @@ class MyApp extends StatelessWidget {
   }
 }
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key? key, this.title}) : super(key: key);
-  final String? title;
+  MyHomePage({Key key, this.title}) : super(key: key);
+  final String title;
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 class _MyHomePageState extends State<MyHomePage> {
-  late List<Widget> tiles;
+  // 遅延初期化
+  // 宣言後に初期化されるnon-nullable変数の宣言
+  // 使用されない場合もある、初期化にコストがかかる変数をlateで宣言しておくと、その変数が使用されない場合は初期化もされないのでコスト削減できます。
+  // late List<Widget> tiles;
+  List<Widget> tiles;
   @override
   void initState() {
     super.initState();
@@ -42,7 +46,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title!),
+        title: Text(widget.title),
       ),
       body: Row(children: tiles),
       floatingActionButton: FloatingActionButton(
