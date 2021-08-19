@@ -32,8 +32,8 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     //2つのStatefulWidgetが準備
     tiles = [
-      StatefulTile(),
-      StatefulTile(),
+      StatefulTile(key: UniqueKey()),
+      StatefulTile(key: UniqueKey()),
     ];
   }
   // 入れ替え処理
