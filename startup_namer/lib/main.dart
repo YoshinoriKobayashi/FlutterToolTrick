@@ -21,6 +21,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       // MyAppクラスのbuild()メソッドを更新し、タイトルを変更し、ホームをRandomWordsウィジェットに変更します。
       title: 'Startup Name Generator',
+      theme: ThemeData(
+        primaryColor: Colors.white,
+      ),
       home: RandomWords(),
       //   appBar: AppBar(
       //     title: const Text('Welcome to Flutter'),
@@ -68,11 +71,19 @@ class _RandomWordsState extends State<RandomWords> {
 
   // RandomWordsStateクラスのbuild()メソッドを更新し、単語生成ライブラリを直接呼び出すのではなく、
   // _buildSuggestions()を使用するようにしました。(ScaffoldはMaterial Designの基本的なビジュアルレイアウトを実装しています。)
+  // Flutter では、Navigator がアプリのルートを含むスタックを管理します。
+  // Navigator のスタックにルートをプッシュすると、表示がこのルートに更新されます。Navigator のスタックからルートをポップすると、表示が前のルートに戻ります。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Startup Name Generator'),
+        // ユーザーがリストアイコンをクリックすると、保存したお気に入りを含む新しいルートが Navigator にプッシュされ、アイコンが表示されます。
+        // ヒント: 一部のウィジェット プロパティは 1 つのウィジェット（child）を受け取ります。
+        // action などの他のプロパティは、角かっこ（[]）で図示されるように、ウィジェットの配列（children）を受け取ります。
+        actions: [
+          IconButton(icon: Icon(Icons.list), onPressed: _pushSaved),
+        ],
         ),
         body: _buildSuggestions(),
       );
@@ -138,28 +149,41 @@ class _RandomWordsState extends State<RandomWords> {
       },
     );
   }
+  void _pushSaved() {
+    // ルートを作成して Navigator のスタックにプッシュします。
+    // この操作により、新しいルートを表示するように画面が変わります。
+    // 新しいページのコンテンツは、匿名関数の MaterialPageRoute の builder プロパティに作成されます。
+    Navigator.of(context).push(
+      // 次に、MaterialPageRoute とそのビルダーを追加します。
+      // ここでは、ListTile 行を生成するコードを追加します。
+      MaterialPageRoute<void>(
+        // builder プロパティは、SavedSuggestions という名前の新しいルートのアプリバーを含む Scaffold を返します。
+        // 新しいルートの本文は、ListTiles 行を含む ListView で構成されています。各行は分割線で区切ります。
+        builder: (BuildContext context) {
+          final tiles = _saved.map(
+              (WordPair pair) {
+                return ListTile(
+                  title: Text(
+                    pair.asPascalCase,
+                    style: _biggerFont,
+                  ),
+                );
+              },
+          );
+          // ListTile の divideTiles() メソッドは、各 ListTile の間に水平方向の間隔を追加します。
+          // divided 変数は、簡易関数である toList() によってリストに変換された最終行を保持します。
+          final divided = ListTile.divideTiles(
+            context: context,
+            tiles: tiles,
+          ).toList();
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Saved Suggestions'),
+            ),
+            body: ListView(children: divided),
+          );
+        },
+      ),
+    );
+  }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
