@@ -27,17 +27,22 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Image.asset('images/choki.png'),
-      )
+        body:
+        Container(
+          padding: EdgeInsets.all(10),
+          child:
+          Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              Image.asset('images/choki.png'),
+              ElevatedButton(onPressed: (){},
+                  style: ButtonStyle(padding:MaterialStateProperty.all(EdgeInsets.all(10.0))),
+                      child: Text('じゃんけんをする', style: TextStyle(fontSize: 30)))
+            ]),
+          )
     );
   }
-
 }
