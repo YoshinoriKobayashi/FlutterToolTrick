@@ -183,6 +183,10 @@ class _MyAppState extends State<MyApp> {
           AUTH0_REDIRECT_URI,
           issuer: 'https://$AUTH0_DOMAIN',
           scopes: <String>['openid', 'profile', 'offline_access'],
+          //　promptValuesがないとサイレントログインになるみたい
+            // ログアウト→ログイン→ログイン状態になる
+          promptValues: ['none']
+          // ログアウト→ログイン→ログイン画面が表示される→ログイン状態になる
           // promptValues: ['login']
         ),
       );
@@ -218,6 +222,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> logoutAction() async {
     print("◆◆◆logoutAction");
+    print("◆◆◆ローカルのリフレッシュトークンを削除");
     await secureStorage.delete(key: 'refresh_token');
     setState(() {
       isLoggedIn = false;
