@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'auth0.dart';
 
 final FlutterAppAuth appAuth = FlutterAppAuth();
 const FlutterSecureStorage secureStorage = FlutterSecureStorage();
@@ -19,11 +20,6 @@ const FlutterSecureStorage secureStorage = FlutterSecureStorage();
 // PKCEを使用した認証コード付与フローでは、クライアントシークレットは必要ありません。
 // ファイル内のAuth0ドメインとAuth0クライアントIDを使用するだけで、Flutterアプリが接続するAuth0のテナント（ドメイン）とアプリケーション（クライアントID）を指定できます。
 // Auth0に複数のテナントと複数のアプリケーションが登録されている場合があります。したがって、それらを指定することが重要です。
-const AUTH0_DOMAIN = 'dev-os0it2sn.us.auth0.com';
-const AUTH0_CLIENT_ID = 'c6KZrJ132epccERnWzbMRUmhjDI5CYx4';
-
-const AUTH0_REDIRECT_URI = 'com.auth0.flutterdemo://login-callback';
-const AUTH0_ISSUER = 'https://$AUTH0_DOMAIN';
 
 /// -----------------------------------
 ///           Profile Widget
