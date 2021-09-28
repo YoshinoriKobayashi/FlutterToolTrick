@@ -1,3 +1,4 @@
+import 'dart:async';
 /// -----------------------------------
 ///          External Packages
 /// -----------------------------------
@@ -18,14 +19,17 @@ const FlutterSecureStorage secureStorage = FlutterSecureStorage();
 ///           Profile Widget
 /// -----------------------------------
 // このウィジェットは、ユーザーがログインするとユーザープロファイル情報を表示するビューを定義します。また、ログアウトボタンも表示します。
+///StatelessWidgetの表示内容を変更するためには、再作成が必要です。通常は初回表示時と親部品が更新されるタイミングで再作成されます。
 class Profile extends StatelessWidget {
   final Future<void> Function() logoutAction;
   final String name;
   final String picture;
 
+  // 初期化
   const Profile(this.logoutAction, this.name, this.picture, {Key key})
       : super(key: key);
 
+  /// StatelessWidgetでは、インスタンスの作成時に画面表示処理であるbuild()メソッドが実行されます
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -48,6 +52,7 @@ class Profile extends StatelessWidget {
         const SizedBox(height: 48),
         RaisedButton(
           onPressed: () async {
+            /// ログアウト
             await logoutAction();
           },
           child: const Text('Logout'),
@@ -74,6 +79,7 @@ class Login extends StatelessWidget {
       children: <Widget>[
         RaisedButton(
           onPressed: () async {
+            // ログインボタン
             await loginAction();
           },
           child: const Text('Login'),
@@ -90,9 +96,12 @@ class Login extends StatelessWidget {
 
 void main() => runApp(const MyApp());
 
+// 最初に動く
+// setState()というメソッドを通じてフレームワーク側に画面更新が必要であることを通知
 class MyApp extends StatefulWidget {
   const MyApp({Key key}) : super(key: key);
 
+  // 状態の管理とその状態に依存する表示を定義するStateというクラスを継承したクラスを作成します
   @override
   _MyAppState createState() => _MyAppState();
 }
@@ -102,8 +111,11 @@ class MyApp extends StatefulWidget {
 /// -----------------------------------
 
 class _MyAppState extends State<MyApp> {
+  // ローディング状態を示す
   bool isBusy = false;
+  // ログイン状態：trueでログイン済み
   bool isLoggedIn = false;
+  //
   String errorMessage;
   String name;
   String picture;
@@ -120,16 +132,19 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Auth0 Demo'),
         ),
         body: Center(
+          // 三項演算子
           child: isBusy
-              ? const CircularProgressIndicator()
+              ? const CircularProgressIndicator() // isBusy:true
               : isLoggedIn
-                  ? Profile(logoutAction, name, picture)
-                  : Login(loginAction, errorMessage),
+                  ? Profile(logoutAction, name, picture) // isLoggedIn:true
+              : Login(loginAction, errorMessage),
         ),
       ),
     );
   }
 
+  // 連想配列<データ型>の関数戻り値
+  // トークンをパース
   Map<String, Object> parseIdToken(String idToken) {
     final List<String> parts = idToken.split('.');
     assert(parts.length == 3);
@@ -137,7 +152,8 @@ class _MyAppState extends State<MyApp> {
     return jsonDecode(
         utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
   }
-
+  // Futureは、すぐには完了しない計算を表します。通常の関数が結果を返す場合、非同期関数はFutureを返します
+  // ユーザーの詳細を取得
   Future<Map<String, Object>> getUserDetails(String accessToken) async {
     const String url = 'https://$AUTH0_DOMAIN/userinfo';
     final http.Response response = await http.get(
@@ -152,7 +168,9 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  // ログインのアクション
   Future<void> loginAction() async {
+    // 更新が必要なことを通知する
     setState(() {
       isBusy = true;
       errorMessage = '';
@@ -174,7 +192,7 @@ class _MyAppState extends State<MyApp> {
           scopes: <String>['openid', 'profile', 'offline_access'],
           //　promptValuesがないとサイレントログインになるみたい
             // ログアウト→ログイン→ログイン状態になる
-          promptValues: ['none']
+          // promptValues: ['none']
           // ログアウト→ログイン→ログイン画面が表示される→ログイン状態になる
           // promptValues: ['login']
         ),
@@ -192,6 +210,7 @@ class _MyAppState extends State<MyApp> {
       await secureStorage.write(
           key: 'refresh_token', value: result.refreshToken);
 
+      // 更新が必要なことを通知する
       setState(() {
         isBusy = false;
         isLoggedIn = true;
@@ -201,6 +220,7 @@ class _MyAppState extends State<MyApp> {
     } on Exception catch (e, s) {
       debugPrint('login error: $e - stack: $s');
 
+      // 更新が必要なことを通知する
       setState(() {
         isBusy = false;
         isLoggedIn = false;
@@ -209,23 +229,41 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  // ログアウトのアクション
   Future<void> logoutAction() async {
     print("◆◆◆logoutAction");
     print("◆◆◆ローカルのリフレッシュトークンを削除");
     await secureStorage.delete(key: 'refresh_token');
+    // 更新が必要なことを通知する
     setState(() {
       isLoggedIn = false;
       isBusy = false;
     });
   }
 
+  // 初期化
+  // FlutterのinitState()メソッドは、ステートフルなクラスを作成する際に使用される最初のメソッドで、ここで任意のウィジェットの変数、データ、プロパティなどを初期化することができます。
   @override
   void initState() {
     print("◆◆◆initState");
     initAction();
+
+    //　タイマーをセット
+    // periodicでスケジュール
+    Timer.periodic(Duration(seconds: 10), _onTimer,);
+
     super.initState();
   }
 
+  void _onTimer(Timer timer) {
+    if (isLoggedIn) {
+      print("ログイン済み");
+    } else {
+      print("ログインしていない");
+    }
+  }
+
+  //
   Future<void> initAction() async {
     print("◆◆◆initAction");
     print("◆◆◆既存のリフレッシュトークンのチェック");
@@ -235,6 +273,7 @@ class _MyAppState extends State<MyApp> {
     print("◆◆◆storedRefreshToken:${storedRefreshToken}");
     if (storedRefreshToken == null) return;
 
+    // 画面更新
     setState(() {
       isBusy = true;
     });
@@ -261,6 +300,7 @@ class _MyAppState extends State<MyApp> {
       await secureStorage.write(
           key: 'refresh_token', value: response.refreshToken);
 
+      // 画面更新
       setState(() {
         isBusy = false;
         isLoggedIn = true;
