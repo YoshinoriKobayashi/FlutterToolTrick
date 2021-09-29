@@ -146,6 +146,7 @@ class _MyAppState extends State<MyApp> {
   // 連想配列<データ型>の関数戻り値
   // トークンをパース
   Map<String, Object> parseIdToken(String idToken) {
+    print("◆◆◆parseIdToken");
     final List<String> parts = idToken.split('.');
     assert(parts.length == 3);
 
@@ -155,6 +156,7 @@ class _MyAppState extends State<MyApp> {
   // Futureは、すぐには完了しない計算を表します。通常の関数が結果を返す場合、非同期関数はFutureを返します
   // ユーザーの詳細を取得
   Future<Map<String, Object>> getUserDetails(String accessToken) async {
+    print("◆◆◆getUserDetails");
     const String url = 'https://$AUTH0_DOMAIN/userinfo';
     final http.Response response = await http.get(
       url,
@@ -170,6 +172,7 @@ class _MyAppState extends State<MyApp> {
 
   // ログインのアクション
   Future<void> loginAction() async {
+    print("◆◆◆loginAction");
     // 更新が必要なことを通知する
     setState(() {
       isBusy = true;
@@ -177,7 +180,6 @@ class _MyAppState extends State<MyApp> {
     });
 
     try {
-      print("◆◆◆loginAction");
       // PKCE 認証コードフローの開始から、コールバックで認証コードを取得し、
       // それをアーティファクトトークンのセットと交換するまでのエンドツーエンドのフローを処理します
       // 次に、AppAuth.authorizeAndExchangeCode()にAuthorizationTokenRequestオブジェクトを渡して、
@@ -208,6 +210,8 @@ class _MyAppState extends State<MyApp> {
       print("◆◆◆result.refreshToken:${result.refreshToken}");
 
       await secureStorage.write(
+          key: 'id_token', value: result.idToken);
+      await secureStorage.write(
           key: 'refresh_token', value: result.refreshToken);
 
       // 更新が必要なことを通知する
@@ -234,6 +238,7 @@ class _MyAppState extends State<MyApp> {
     print("◆◆◆logoutAction");
     print("◆◆◆ローカルのリフレッシュトークンを削除");
     await secureStorage.delete(key: 'refresh_token');
+    await secureStorage.delete(key: 'id_token');
     // 更新が必要なことを通知する
     setState(() {
       isLoggedIn = false;
@@ -255,9 +260,73 @@ class _MyAppState extends State<MyApp> {
     super.initState();
   }
 
-  void _onTimer(Timer timer) {
+  // テスト的にタイマーでトークンをローテーション
+  void _onTimer(Timer timer) async {
     if (isLoggedIn) {
       print("ログイン済み");
+
+      // IDトークンの有効期限をチェック
+      final String storedIdToken =
+          await secureStorage.read(key: 'id_token');
+      // print("◆◆◆storedIdToken:${storedIdToken}");
+      if (storedIdToken == null) return;
+
+      // IdTokenをパース
+      final Map<String, Object> parseStoredIdToken = parseIdToken(storedIdToken);
+
+      var expTimestamp = int.parse(parseStoredIdToken['exp'].toString());
+      var currentTimestamp = DateTime.now().millisecondsSinceEpoch / 1000;
+      print("◆◆◆◆${expTimestamp} < ${currentTimestamp}");
+      // 期限のチェック
+      if (expTimestamp < currentTimestamp) {
+        print("◆◆◆◆expTimestamp < currentTimestamp = true");
+        print("◆◆◆◆トークンの有効期限切れ");
+        print("◆◆◆◆isValidToken = false;");
+        print("◆◆◆◆localDataManager.token = null");
+
+        // 既存のリフレッシュトークンのチェック
+        final String storedRefreshToken =
+        await secureStorage.read(key: 'refresh_token');
+        print("◆◆◆storedRefreshToken:${storedRefreshToken}");
+        if (storedRefreshToken == null) return;
+
+        try {
+          print("◆◆◆トークンを交換する");
+          // トークンを交換する場合
+          final TokenResponse response = await appAuth.token(TokenRequest(
+            AUTH0_CLIENT_ID,
+            AUTH0_REDIRECT_URI,
+            issuer: AUTH0_ISSUER,
+            refreshToken: storedRefreshToken,
+          ));
+
+          final Map<String, Object> idToken = parseIdToken(response.idToken);
+          final Map<String, Object> profile =
+          await getUserDetails(response.accessToken);
+          print("◆◆◆idToken:${idToken}");
+          print("◆◆◆response.accessToken:${response.accessToken}");
+          print("◆◆◆profile:${profile}");
+          print("◆◆◆response.refreshToken:${response.refreshToken}");
+          print("◆◆◆リフレッシュトークンを保存");
+          // IDトークンを保存
+          await secureStorage.write(
+              key: 'id_token', value: response.idToken);
+          // リフレッシュトークンを保存
+          await secureStorage.write(
+              key: 'refresh_token', value: response.refreshToken);
+
+        } on Exception catch (e, s) {
+          debugPrint('error on refresh token: $e - stack: $s');
+          await logoutAction();
+        }
+
+      } else {
+        print("◆◆◆◆expTimestamp < currentTimestamp = false");
+        print("◆◆◆◆トークンはまだ使える");
+        print("◆◆◆◆isValidToken = true;");
+
+      }
+
     } else {
       print("ログインしていない");
     }
@@ -279,8 +348,9 @@ class _MyAppState extends State<MyApp> {
     });
 
     try {
-      print("◆◆◆トークンを取得");
+      print("◆◆◆トークンを交換する");
       // トークンを取得
+      // トークンを交換する場合
       final TokenResponse response = await appAuth.token(TokenRequest(
         AUTH0_CLIENT_ID,
         AUTH0_REDIRECT_URI,
@@ -296,6 +366,9 @@ class _MyAppState extends State<MyApp> {
       print("◆◆◆profile:${profile}");
       print("◆◆◆response.refreshToken:${response.refreshToken}");
       print("◆◆◆リフレッシュトークンを保存");
+      // IDトークンを保存
+      await secureStorage.write(
+          key: 'id_token', value: response.idToken);
       // リフレッシュトークンを保存
       await secureStorage.write(
           key: 'refresh_token', value: response.refreshToken);
