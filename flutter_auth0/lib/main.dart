@@ -15,50 +15,88 @@ import 'auth0.dart';
 final FlutterAppAuth appAuth = FlutterAppAuth();
 const FlutterSecureStorage secureStorage = FlutterSecureStorage();
 
+
 /// -----------------------------------
 ///           Profile Widget
 /// -----------------------------------
 // このウィジェットは、ユーザーがログインするとユーザープロファイル情報を表示するビューを定義します。また、ログアウトボタンも表示します。
 ///StatelessWidgetの表示内容を変更するためには、再作成が必要です。通常は初回表示時と親部品が更新されるタイミングで再作成されます。
 class Profile extends StatelessWidget {
+  // プロパティ
   final Future<void> Function() logoutAction;
   final String name;
   final String picture;
+  final bool stateToken;
+  final rotationNo;
 
   // 初期化
-  const Profile(this.logoutAction, this.name, this.picture, {Key key})
+  const Profile(this.logoutAction, this.name, this.picture,  this.stateToken, this.rotationNo,{Key key})
       : super(key: key);
 
   /// StatelessWidgetでは、インスタンスの作成時に画面表示処理であるbuild()メソッドが実行されます
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
+    return Stack(
+      children: [
         Container(
-          width: 150,
-          height: 150,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.blue, width: 4),
-            shape: BoxShape.circle,
-            image: DecorationImage(
-              fit: BoxFit.fill,
-              image: NetworkImage(picture ?? ''),
-            ),
-          ),
+            constraints: BoxConstraints.expand(),
+            color: tokenColor(),
         ),
-        const SizedBox(height: 24),
-        Text('Name: $name'),
-        const SizedBox(height: 48),
-        RaisedButton(
-          onPressed: () async {
-            /// ログアウト
-            await logoutAction();
-          },
-          child: const Text('Logout'),
+        Container(
+          alignment: Alignment.center,
+        child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.blue, width: 4),
+                  shape: BoxShape.circle,
+                  image: DecorationImage(
+                    fit: BoxFit.fill,
+                    image: NetworkImage(picture ?? ''),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text('Name: $name'),
+              const SizedBox(height: 24),
+              Text('状態: ${tokenText()}'),
+              const SizedBox(height: 24),
+              Text('トークン使用回数: ${rotationNo}',
+              style:TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.bold
+              )),
+            const SizedBox(height: 48),
+              RaisedButton(
+                onPressed: () async {
+                  /// ログアウト
+                  await logoutAction();
+                },
+                child: const Text('Logout'),
+              ),
+            ],
+        )
         ),
       ],
     );
+  }
+  String tokenText() {
+    if (stateToken) {
+      return "トークンを交換する";
+    } else{
+      return "トークンはまだ使える";
+    }
+  }
+  /// カラーの取得
+  Color tokenColor() {
+    if (stateToken) {
+      return Colors.orange;
+    } else {
+      return Colors.white;
+    }
   }
 }
 
@@ -119,6 +157,8 @@ class _MyAppState extends State<MyApp> {
   String errorMessage;
   String name;
   String picture;
+  bool stateToken = false;
+  int rotationNo = 0;
 
   // ------------------------------
   // ビルド時にユーザーインターフェースを条件付きでレンダリングする
@@ -136,7 +176,7 @@ class _MyAppState extends State<MyApp> {
           child: isBusy
               ? const CircularProgressIndicator() // isBusy:true
               : isLoggedIn
-                  ? Profile(logoutAction, name, picture) // isLoggedIn:true
+                  ? Profile(logoutAction, name, picture, stateToken, rotationNo) // isLoggedIn:true
               : Login(loginAction, errorMessage),
         ),
       ),
@@ -220,6 +260,7 @@ class _MyAppState extends State<MyApp> {
         isLoggedIn = true;
         name = idToken['name'];
         picture = profile['picture'];
+        stateToken = false;
       });
     } on Exception catch (e, s) {
       debugPrint('login error: $e - stack: $s');
@@ -229,6 +270,7 @@ class _MyAppState extends State<MyApp> {
         isBusy = false;
         isLoggedIn = false;
         errorMessage = e.toString();
+        stateToken = false;
       });
     }
   }
@@ -243,6 +285,7 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       isLoggedIn = false;
       isBusy = false;
+      stateToken = false;
     });
   }
 
@@ -262,6 +305,9 @@ class _MyAppState extends State<MyApp> {
 
   // テスト的にタイマーでトークンをローテーション
   void _onTimer(Timer timer) async {
+    bool wkState = false;
+    int tokenCnt = 0;
+
     if (isLoggedIn) {
       print("ログイン済み");
 
@@ -315,9 +361,15 @@ class _MyAppState extends State<MyApp> {
           await secureStorage.write(
               key: 'refresh_token', value: response.refreshToken);
 
+          /// トークンが更新
+          wkState = true;
+          tokenCnt = 0;
+
         } on Exception catch (e, s) {
           debugPrint('error on refresh token: $e - stack: $s');
           await logoutAction();
+          wkState = false;
+          tokenCnt = 1;
         }
 
       } else {
@@ -325,11 +377,24 @@ class _MyAppState extends State<MyApp> {
         print("◆◆◆◆トークンはまだ使える");
         print("◆◆◆◆isValidToken = true;");
 
+        wkState = false;
+        tokenCnt = 1;
       }
 
     } else {
       print("ログインしていない");
     }
+
+    // 画面更新
+    setState(() {
+      stateToken = wkState;
+      if (tokenCnt == 0) {
+        rotationNo = 1;
+      } else {
+        rotationNo += tokenCnt;
+      }
+    });
+
   }
 
   //
@@ -379,6 +444,8 @@ class _MyAppState extends State<MyApp> {
         isLoggedIn = true;
         name = idToken['name'];
         picture = profile['picture'];
+        stateToken = true;
+        rotationNo = 1;
       });
     } on Exception catch (e, s) {
       debugPrint('error on refresh token: $e - stack: $s');
