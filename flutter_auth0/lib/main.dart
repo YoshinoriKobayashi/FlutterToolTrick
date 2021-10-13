@@ -4,9 +4,7 @@ import 'dart:async';
 /// -----------------------------------
 
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
-
 import 'package:http/http.dart' as http;
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -240,11 +238,10 @@ class _MyAppState extends State<MyApp> {
         ),
       );
 
-      final Map<String, Object> idToken = parseIdToken(result.idToken);
       final Map<String, Object> profile =
           await getUserDetails(result.accessToken);
 
-      print("◆◆◆idToken:${idToken}");
+      print("◆◆◆result.idToken:${result.idToken}");
       print("◆◆◆profile:${profile}");
       print("◆◆◆result.accessToken:${result.accessToken}");
       print("◆◆◆result.refreshToken:${result.refreshToken}");
@@ -258,7 +255,7 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         isBusy = false;
         isLoggedIn = true;
-        name = idToken['name'];
+        name = profile['name'];
         picture = profile['picture'];
         stateToken = false;
       });
@@ -346,11 +343,8 @@ class _MyAppState extends State<MyApp> {
             refreshToken: storedRefreshToken,
           ));
 
-          final Map<String, Object> idToken = parseIdToken(response.idToken);
-          final Map<String, Object> profile =
-          await getUserDetails(response.accessToken);
-          print("◆◆◆idToken:${idToken}");
-          print("◆◆◆response.accessToken:${response.accessToken}");
+          final Map<String, Object> profile = await getUserDetails(response.accessToken);
+          print("◆◆◆response.idToken:${response.idToken}");
           print("◆◆◆profile:${profile}");
           print("◆◆◆response.refreshToken:${response.refreshToken}");
           print("◆◆◆リフレッシュトークンを保存");
@@ -423,10 +417,10 @@ class _MyAppState extends State<MyApp> {
         refreshToken: storedRefreshToken,
       ));
 
-      final Map<String, Object> idToken = parseIdToken(response.idToken);
-      final Map<String, Object> profile =
+      final
+      Map<String, Object> profile =
           await getUserDetails(response.accessToken);
-      print("◆◆◆idToken:${idToken}");
+      print("◆◆◆response.idToken:${response.idToken}");
       print("◆◆◆response.accessToken:${response.accessToken}");
       print("◆◆◆profile:${profile}");
       print("◆◆◆response.refreshToken:${response.refreshToken}");
@@ -442,7 +436,7 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         isBusy = false;
         isLoggedIn = true;
-        name = idToken['name'];
+        name = profile['name'];
         picture = profile['picture'];
         stateToken = true;
         rotationNo = 1;
