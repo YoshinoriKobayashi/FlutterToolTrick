@@ -355,6 +355,9 @@ class _MyAppState extends State<MyApp> {
           await secureStorage.write(
               key: 'refresh_token', value: response.refreshToken);
 
+          final String aaaa = await secureStorage.read(key: 'refresh_token');
+          print("◆◆◆保存後：response.refreshToken:${aaaa}");
+
           /// トークンが更新
           wkState = true;
           tokenCnt = 0;
@@ -399,7 +402,11 @@ class _MyAppState extends State<MyApp> {
     final String storedRefreshToken =
         await secureStorage.read(key: 'refresh_token');
     print("◆◆◆storedRefreshToken:${storedRefreshToken}");
-    if (storedRefreshToken == null) return;
+
+    if (storedRefreshToken == null) {
+      await logoutAction();
+      return;
+    }
 
     // 画面更新
     setState(() {
@@ -416,6 +423,11 @@ class _MyAppState extends State<MyApp> {
         issuer: AUTH0_ISSUER,
         refreshToken: storedRefreshToken,
       ));
+
+      if (response.refreshToken == null) {
+        await logoutAction();
+        return;
+      }
 
       final
       Map<String, Object> profile =
