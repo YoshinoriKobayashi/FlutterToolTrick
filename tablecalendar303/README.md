@@ -1,16 +1,19 @@
-# tablecalendar303
+# Table Calendar example
 
-A new Flutter project.
+Demonstrates how to use [table_calendar](https://pub.dartlang.org/packages/table_calendar) package.
+Displays **Table Calendar** widget with a `ListView` underneath it.
 
-## Getting Started
+| ![Image](https://raw.githubusercontent.com/aleksanderwozniak/table_calendar/assets/table_calendar_styles.gif) | ![Image](https://raw.githubusercontent.com/aleksanderwozniak/table_calendar/assets/table_calendar_builders.gif) |
+| :------------: | :------------: |
+| **Table Calendar** with custom styles | **Table Calendar** with Builders |
 
-This project is a starting point for a Flutter application.
+**Table Calendar** offers a lot of customization:
+* by using custom Styles
+* by using custom Builders (accompanied by custom Styles)
 
-A few resources to get you started if this is your first Flutter project:
+Using just Styles is a great way to get nice results with little effort.
+That being said, using Builders will give you full control over Calendar's UI.
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+This example project will show you both of aforementioned methods.
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+For more info please refer to [API docs](https://pub.dartlang.org/documentation/table_calendar/latest/table_calendar/table_calendar-library.html).

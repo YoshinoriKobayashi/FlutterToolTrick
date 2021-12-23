@@ -13,6 +13,9 @@ class Event {
 /// Example events
 ///
 /// マップを使用する場合は、[LinkedHashMap]を使用することが強く推奨されます。
+/// を使用することにした場合はMap、それをaにLinkedHashMapすることをお勧めします。
+/// これにより、2つのDateTimeオブジェクトの等価比較をオーバーライドして、日付部分だけで比較できます。
+///
 final kEvents = LinkedHashMap<DateTime,List<Event>> (
   equals: isSameDay,
   hashCode: getHashCode,
